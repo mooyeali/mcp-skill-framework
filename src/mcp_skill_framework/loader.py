@@ -32,6 +32,8 @@ class SkillLoader:
 
     def _load_plugin(self, plugin_id: str, module_name: str, registry: SkillRegistry) -> None:
         try:
+            importlib.invalidate_caches()
+            sys.modules.pop(module_name, None)
             module = importlib.import_module(module_name)
             register = getattr(module, "register")
             register(registry)

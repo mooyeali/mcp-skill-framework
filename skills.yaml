@@ -4,3 +4,7 @@ plugins:
     enabled: true
     module: echo
     order: 10
+  local_files:
+    enabled: true
+    module: local_files
+    order: 20

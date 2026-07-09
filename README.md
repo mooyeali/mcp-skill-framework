@@ -59,3 +59,13 @@ The framework exposes these MCP-facing operations:
 - `list_skills`
 - `describe_skill`
 - `call_skill`
+- `reload_skills`
+
+`reload_skills` reloads `skills.yaml` and imports currently enabled plugins without
+restarting the MCP service. This keeps the MCP tool surface stable while allowing
+new skill modules to be added under `skills/` and enabled in configuration.
+
+## Built-in Example Skills
+
+- `echo.echo`: returns the provided text.
+- `local_files.list_directory`: lists files and subdirectories in a local path.

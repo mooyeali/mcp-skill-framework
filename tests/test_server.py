@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from mcp_skill_framework.registry import SkillRegistry
 from mcp_skill_framework.server import SkillMcpService, create_service
 
@@ -44,3 +46,65 @@ def test_create_service_loads_configured_plugins():
     assert service.call_skill("echo.echo", {"text": "configured"}) == {
         "result": {"text": "configured"}
     }
+
+
+def test_service_can_reload_plugins_after_startup(tmp_path: Path):
+    plugin_root = tmp_path / "skills"
+    plugin_root.mkdir()
+    config_file = tmp_path / "skills.yaml"
+    config_file.write_text(
+        """
+plugin_dir: skills
+plugins:
+  echo:
+    enabled: true
+""",
+        encoding="utf-8",
+    )
+    echo_dir = plugin_root / "echo"
+    echo_dir.mkdir()
+    (echo_dir / "__init__.py").write_text(
+        """
+def register(registry):
+    registry.register("echo.echo", "Echo text.", {}, lambda arguments: arguments)
+""",
+        encoding="utf-8",
+    )
+    service = create_service(config_file)
+
+    assert service.call_skill("hotplug.ping", {})["error"]["type"] == "SkillNotFoundError"
+
+    hotplug_dir = plugin_root / "hotplug"
+    hotplug_dir.mkdir()
+    (hotplug_dir / "__init__.py").write_text(
+        """
+def register(registry):
+    registry.register(
+        "hotplug.ping",
+        "Return a hot-plug response.",
+        {},
+        lambda arguments: {"pong": True},
+    )
+""",
+        encoding="utf-8",
+    )
+    config_file.write_text(
+        """
+plugin_dir: skills
+plugins:
+  echo:
+    enabled: true
+  hotplug:
+    enabled: true
+""",
+        encoding="utf-8",
+    )
+
+    assert service.reload_skills() == {
+        "reloaded": True,
+        "skills": [
+            {"name": "echo.echo", "description": "Echo text."},
+            {"name": "hotplug.ping", "description": "Return a hot-plug response."},
+        ],
+    }
+    assert service.call_skill("hotplug.ping", {}) == {"result": {"pong": True}}

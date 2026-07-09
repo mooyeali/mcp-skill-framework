@@ -8,8 +8,9 @@ from mcp_skill_framework.registry import SkillRegistry
 
 
 class SkillMcpService:
-    def __init__(self, registry: SkillRegistry):
+    def __init__(self, registry: SkillRegistry, config_path: str | Path | None = None):
         self.registry = registry
+        self.config_path = Path(config_path) if config_path is not None else None
 
     def list_skills(self) -> dict[str, Any]:
         return {"skills": self.registry.list()}
@@ -17,6 +18,22 @@ class SkillMcpService:
     def describe_skill(self, name: str) -> dict[str, Any]:
         try:
             return {"skill": self.registry.describe(name)}
+        except SkillFrameworkError as exc:
+            return _error_payload(exc)
+
+    def reload_skills(self) -> dict[str, Any]:
+        if self.config_path is None:
+            return {
+                "error": {
+                    "type": "SkillConfigError",
+                    "message": "Cannot reload skills without a config path.",
+                }
+            }
+        try:
+            registry = SkillRegistry()
+            SkillLoader(load_config(self.config_path)).load_into(registry)
+            self.registry = registry
+            return {"reloaded": True, "skills": self.registry.list()}
         except SkillFrameworkError as exc:
             return _error_payload(exc)
 
@@ -30,7 +47,7 @@ class SkillMcpService:
 def create_service(config_path: str | Path) -> SkillMcpService:
     registry = SkillRegistry()
     SkillLoader(load_config(config_path)).load_into(registry)
-    return SkillMcpService(registry)
+    return SkillMcpService(registry, config_path)
 
 
 def run_stdio_server(config_path: str | Path) -> None:
@@ -55,6 +72,10 @@ def run_stdio_server(config_path: str | Path) -> None:
     @mcp.tool()
     def call_skill(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         return service.call_skill(name, arguments)
+
+    @mcp.tool()
+    def reload_skills() -> dict[str, Any]:
+        return service.reload_skills()
 
     mcp.run()
 
