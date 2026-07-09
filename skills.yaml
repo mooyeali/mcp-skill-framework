@@ -1,0 +1,6 @@
+plugin_dir: skills
+plugins:
+  echo:
+    enabled: true
+    module: echo
+    order: 10
