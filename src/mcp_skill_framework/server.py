@@ -7,6 +7,9 @@ from mcp_skill_framework.loader import SkillLoader
 from mcp_skill_framework.registry import SkillRegistry
 
 
+TransportName = str
+
+
 class SkillMcpService:
     def __init__(self, registry: SkillRegistry, config_path: str | Path | None = None):
         self.registry = registry
@@ -50,7 +53,12 @@ def create_service(config_path: str | Path) -> SkillMcpService:
     return SkillMcpService(registry, config_path)
 
 
-def run_stdio_server(config_path: str | Path) -> None:
+def create_fastmcp_server(
+    config_path: str | Path,
+    host: str = "127.0.0.1",
+    port: int = 8000,
+    path: str = "/mcp",
+):
     try:
         from mcp.server.fastmcp import FastMCP
     except ImportError as exc:
@@ -59,7 +67,12 @@ def run_stdio_server(config_path: str | Path) -> None:
         ) from exc
 
     service = create_service(config_path)
-    mcp = FastMCP("mcp-skill-framework")
+    mcp = FastMCP(
+        "mcp-skill-framework",
+        host=host,
+        port=port,
+        streamable_http_path=path,
+    )
 
     @mcp.tool()
     def list_skills() -> dict[str, Any]:
@@ -77,7 +90,41 @@ def run_stdio_server(config_path: str | Path) -> None:
     def reload_skills() -> dict[str, Any]:
         return service.reload_skills()
 
-    mcp.run()
+    return mcp
+
+
+def run_stdio_server(config_path: str | Path) -> None:
+    create_fastmcp_server(config_path).run(transport="stdio")
+
+
+def run_streamable_http_server(
+    config_path: str | Path,
+    host: str = "127.0.0.1",
+    port: int = 8000,
+    path: str = "/mcp",
+) -> None:
+    create_fastmcp_server(
+        config_path=config_path,
+        host=host,
+        port=port,
+        path=path,
+    ).run(transport="streamable-http")
+
+
+def run_server(
+    config_path: str | Path,
+    transport: TransportName = "stdio",
+    host: str = "127.0.0.1",
+    port: int = 8000,
+    path: str = "/mcp",
+) -> None:
+    if transport == "stdio":
+        run_stdio_server(config_path)
+        return
+    if transport == "streamable-http":
+        run_streamable_http_server(config_path, host=host, port=port, path=path)
+        return
+    raise ValueError(f"Unsupported MCP transport: {transport}")
 
 
 def _error_payload(exc: SkillFrameworkError) -> dict[str, Any]:

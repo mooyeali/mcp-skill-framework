@@ -14,7 +14,13 @@ Run the stdio MCP server after installing the optional MCP SDK:
 
 ```bash
 pip install -e ".[mcp]"
-python -m mcp_skill_framework --config skills.yaml
+python -m mcp_skill_framework --transport stdio --config skills.yaml
+```
+
+Run the MCP streamable HTTP server:
+
+```bash
+python -m mcp_skill_framework --transport streamable-http --host 127.0.0.1 --port 8000 --path /mcp --config skills.yaml
 ```
 
 ## Configuration
@@ -64,6 +70,14 @@ The framework exposes these MCP-facing operations:
 `reload_skills` reloads `skills.yaml` and imports currently enabled plugins without
 restarting the MCP service. This keeps the MCP tool surface stable while allowing
 new skill modules to be added under `skills/` and enabled in configuration.
+
+## MCP Transports
+
+The framework supports two MCP transports over the same registered tools:
+
+- `stdio`: process-based MCP transport for local agents.
+- `streamable-http`: HTTP MCP transport exposed at the configured path, default
+  `http://127.0.0.1:8000/mcp`.
 
 ## Built-in Example Skills
 

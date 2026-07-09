@@ -1,7 +1,14 @@
 from pathlib import Path
 
+import pytest
+
 from mcp_skill_framework.registry import SkillRegistry
-from mcp_skill_framework.server import SkillMcpService, create_service
+from mcp_skill_framework.server import (
+    SkillMcpService,
+    create_fastmcp_server,
+    create_service,
+    run_server,
+)
 
 
 def test_service_exposes_list_describe_and_call():
@@ -108,3 +115,25 @@ plugins:
         ],
     }
     assert service.call_skill("hotplug.ping", {}) == {"result": {"pong": True}}
+
+
+def test_create_fastmcp_server_registers_shared_tools():
+    mcp = create_fastmcp_server(
+        "skills.yaml",
+        host="127.0.0.1",
+        port=8765,
+        path="/mcp",
+    )
+
+    assert mcp.name == "mcp-skill-framework"
+
+
+def test_run_server_rejects_unsupported_transport():
+    with pytest.raises(ValueError, match="Unsupported MCP transport"):
+        run_server(
+            config_path="skills.yaml",
+            transport="websocket",
+            host="127.0.0.1",
+            port=8000,
+            path="/mcp",
+        )
