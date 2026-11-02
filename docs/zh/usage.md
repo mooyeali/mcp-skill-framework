@@ -57,7 +57,55 @@ python -m mcp_skill_framework \
 http://127.0.0.1:8000/mcp
 ```
 
+## 使用 Docker 运行
+
+构建镜像：
+
+```bash
+docker build -t mcp-skill-framework:local .
+```
+
+导出构建好的镜像：
+
+```bash
+mkdir -p dist
+docker save mcp-skill-framework:local -o dist/mcp-skill-framework-local.tar
+```
+
+导入导出的镜像：
+
+```bash
+./scripts/import-docker-image.sh dist/mcp-skill-framework-local.tar
+```
+
+运行时将宿主机 `skills` 目录挂载进容器：
+
+```bash
+docker run --rm -p 8000:8000 -v "$PWD/skills:/app/skills:ro" mcp-skill-framework:local
+```
+
+镜像默认启动 streamable HTTP 服务。默认配置文件是 `/app/skills.yaml`，
+该配置会从 `/app/skills` 读取插件。
+
+通用 agent 配置：
+
+```json
+{
+  "mcpServers": {
+    "skills": {
+      "type": "streamable-http",
+      "url": "http://127.0.0.1:8000/mcp"
+    }
+  }
+}
+```
+
 ## 可用 MCP 工具
+
+已启用的 skill 会直接暴露为 MCP 工具。agent 应直接调用 `echo.echo` 或
+`local_files.list_directory` 这样的工具名。
+
+框架同时保留兼容和管理工具：
 
 ### `list_skills`
 
@@ -85,7 +133,7 @@ http://127.0.0.1:8000/mcp
 
 ### `call_skill`
 
-调用已注册的 skill。
+兼容辅助工具，用于按名称调用已注册的 skill。agent 接入时优先使用直接工具调用。
 
 参数：
 
@@ -131,8 +179,7 @@ http://127.0.0.1:8000/mcp
 
 ```json
 {
-  "name": "echo.echo",
-  "arguments": {"text": "hello"}
+  "text": "hello"
 }
 ```
 
@@ -142,11 +189,8 @@ http://127.0.0.1:8000/mcp
 
 ```json
 {
-  "name": "local_files.list_directory",
-  "arguments": {
-    "path": ".",
-    "include_hidden": false
-  }
+  "path": ".",
+  "include_hidden": false
 }
 ```
 

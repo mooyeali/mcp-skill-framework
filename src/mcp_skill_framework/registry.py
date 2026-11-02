@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
 from typing import Any
 
@@ -30,6 +32,9 @@ class SkillRegistry:
 
     def list(self) -> list[dict[str, str]]:
         return [skill.summary() for skill in self._skills.values()]
+
+    def definitions(self) -> list[SkillDefinition]:
+        return list(self._skills.values())
 
     def describe(self, name: str) -> dict[str, Any]:
         return self._get(name).describe()

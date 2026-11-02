@@ -48,15 +48,14 @@ async def test_mcp_streamable_http_server_serves_skill_tools():
             async with ClientSession(read_stream, write_stream) as session:
                 await session.initialize()
 
-                listed = await session.call_tool("list_skills", {})
-                assert {
-                    "name": "echo.echo",
-                    "description": "Return the provided text.",
-                } in listed.structuredContent["skills"]
+                tools = await session.list_tools()
+                tool_names = {tool.name for tool in tools.tools}
+                assert "echo.echo" in tool_names
+                assert "local_files.list_directory" in tool_names
 
                 called = await session.call_tool(
-                    "call_skill",
-                    {"name": "echo.echo", "arguments": {"text": "http"}},
+                    "echo.echo",
+                    {"text": "http"},
                 )
                 assert called.structuredContent == {"result": {"text": "http"}}
     finally:

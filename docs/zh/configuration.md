@@ -101,6 +101,22 @@ python -m mcp_skill_framework \
 
 `--host`、`--port`、`--path` 仅对 `streamable-http` 生效。
 
+HTTP MCP client 的 agent 配置：
+
+```json
+{
+  "mcpServers": {
+    "skills": {
+      "type": "streamable-http",
+      "url": "http://127.0.0.1:8000/mcp"
+    }
+  }
+}
+```
+
+已启用插件中的 skill 会直接暴露为 MCP 工具。`list_skills`、`describe_skill`
+和 `call_skill` 等兼容辅助工具仍然保留。
+
 ## 内置插件配置
 
 ### Echo

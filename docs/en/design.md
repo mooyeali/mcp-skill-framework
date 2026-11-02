@@ -44,9 +44,8 @@ create_fastmcp_server(...)
   |      +--> SkillLoader(config).load_into(SkillRegistry())
   |
   +--> FastMCP tools
-         - list_skills
-         - describe_skill
-         - call_skill
+         - direct skill tools from enabled plugins
+         - compatibility and management tools
          - reload_skills
 ```
 
@@ -64,6 +63,8 @@ logic is limited to `create_fastmcp_server`, `run_stdio_server`, and
 5. Each plugin module is imported.
 6. Each plugin's `register(registry)` function registers one or more tools.
 7. The registry becomes the source of truth for listing, describing, and calling skills.
+8. `create_fastmcp_server` exposes each loaded skill as a direct MCP tool using
+   the skill name and input schema.
 
 ## Plugin Contract
 
@@ -84,13 +85,17 @@ Handlers receive a `dict[str, Any]` and return JSON-serializable data.
 
 ## MCP Tools
 
-The framework exposes these MCP tools:
+The framework exposes enabled skills directly as MCP tools. A skill registered
+as `echo.echo` appears in MCP `list_tools` as `echo.echo` and can be called
+directly with its declared input schema.
+
+The framework also exposes compatibility and management tools:
 
 | Tool | Purpose |
 | --- | --- |
 | `list_skills` | Returns skill names and descriptions. |
 | `describe_skill` | Returns one skill's name, description, and input schema. |
-| `call_skill` | Invokes a skill by name with an arguments object. |
+| `call_skill` | Compatibility helper that invokes a skill by name with an arguments object. |
 | `reload_skills` | Reloads `skills.yaml`, imports enabled plugins, and replaces the active registry. |
 
 ## Transports
@@ -109,6 +114,9 @@ Both transports use the same FastMCP tool registration and the same
 swaps it into the running `SkillMcpService`. The loader invalidates import caches
 and removes plugin modules from `sys.modules` before import, which lets newly
 created or changed local plugin packages be loaded in a running service.
+After a successful reload, direct MCP skill tools are synchronized with the new
+registry: removed skills are removed from the tool list and newly enabled skills
+are added.
 
 ## Error Model
 

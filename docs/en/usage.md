@@ -57,7 +57,55 @@ The default endpoint is:
 http://127.0.0.1:8000/mcp
 ```
 
+## Run with Docker
+
+Build the image:
+
+```bash
+docker build -t mcp-skill-framework:local .
+```
+
+Export the built image:
+
+```bash
+mkdir -p dist
+docker save mcp-skill-framework:local -o dist/mcp-skill-framework-local.tar
+```
+
+Import the exported image:
+
+```bash
+./scripts/import-docker-image.sh dist/mcp-skill-framework-local.tar
+```
+
+Run it with the host `skills` directory mounted into the container:
+
+```bash
+docker run --rm -p 8000:8000 -v "$PWD/skills:/app/skills:ro" mcp-skill-framework:local
+```
+
+The image starts the streamable HTTP server by default. Its default config is
+`/app/skills.yaml`, and that config reads plugins from `/app/skills`.
+
+Generic agent configuration:
+
+```json
+{
+  "mcpServers": {
+    "skills": {
+      "type": "streamable-http",
+      "url": "http://127.0.0.1:8000/mcp"
+    }
+  }
+}
+```
+
 ## Available MCP Tools
+
+Enabled skills are exposed directly as MCP tools. Agents should call tool names
+such as `echo.echo` or `local_files.list_directory` directly.
+
+The framework also keeps compatibility and management tools:
 
 ### `list_skills`
 
@@ -85,7 +133,8 @@ Arguments:
 
 ### `call_skill`
 
-Invokes a registered skill.
+Compatibility helper that invokes a registered skill by name. Prefer direct
+tool calls for agent integrations.
 
 Arguments:
 
@@ -131,8 +180,7 @@ Returns the provided text.
 
 ```json
 {
-  "name": "echo.echo",
-  "arguments": {"text": "hello"}
+  "text": "hello"
 }
 ```
 
@@ -142,11 +190,8 @@ Lists entries in a local directory.
 
 ```json
 {
-  "name": "local_files.list_directory",
-  "arguments": {
-    "path": ".",
-    "include_hidden": false
-  }
+  "path": ".",
+  "include_hidden": false
 }
 ```
 

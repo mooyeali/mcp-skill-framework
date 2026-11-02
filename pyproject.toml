@@ -7,7 +7,7 @@ name = "mcp-skill-framework"
 version = "0.1.0"
 description = "Python MCP service framework for pluggable skill tools."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
     "PyYAML>=6.0",
 ]

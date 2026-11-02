@@ -103,6 +103,22 @@ python -m mcp_skill_framework \
 
 `--host`, `--port`, and `--path` are only used by `streamable-http`.
 
+Agent configuration for HTTP MCP clients:
+
+```json
+{
+  "mcpServers": {
+    "skills": {
+      "type": "streamable-http",
+      "url": "http://127.0.0.1:8000/mcp"
+    }
+  }
+}
+```
+
+Enabled plugin skills are exposed as direct MCP tools. Compatibility helpers
+such as `list_skills`, `describe_skill`, and `call_skill` remain available.
+
 ## Built-in Plugin Configuration
 
 ### Echo

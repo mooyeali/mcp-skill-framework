@@ -43,9 +43,8 @@ create_fastmcp_server(...)
   |      +--> SkillLoader(config).load_into(SkillRegistry())
   |
   +--> FastMCP tools
-         - list_skills
-         - describe_skill
-         - call_skill
+         - 来自已启用插件的直接 skill 工具
+         - 兼容和管理工具
          - reload_skills
 ```
 
@@ -62,6 +61,8 @@ create_fastmcp_server(...)
 5. 动态导入每个插件模块。
 6. 调用插件的 `register(registry)`，注册一个或多个工具。
 7. registry 成为 skill 列表、描述和调用的唯一事实来源。
+8. `create_fastmcp_server` 使用 skill 名称和输入 schema，将每个已加载 skill
+   直接暴露为 MCP 工具。
 
 ## 插件契约
 
@@ -82,13 +83,17 @@ handler 接收 `dict[str, Any]`，返回可 JSON 序列化的数据。
 
 ## MCP 工具
 
-框架暴露以下 MCP 工具：
+框架会将已启用的 skill 直接暴露为 MCP 工具。注册名为 `echo.echo` 的 skill
+会在 MCP `list_tools` 中显示为 `echo.echo`，并可按其声明的 input schema
+直接调用。
+
+框架同时暴露兼容和管理工具：
 
 | 工具 | 用途 |
 | --- | --- |
 | `list_skills` | 返回 skill 名称和描述。 |
 | `describe_skill` | 返回指定 skill 的名称、描述和输入 schema。 |
-| `call_skill` | 按名称和参数对象调用 skill。 |
+| `call_skill` | 兼容辅助工具，用于按名称和参数对象调用 skill。 |
 | `reload_skills` | 重新读取 `skills.yaml`，导入已启用插件，并替换当前 registry。 |
 
 ## 传输协议
@@ -106,6 +111,8 @@ handler 接收 `dict[str, Any]`，返回可 JSON 序列化的数据。
 `reload_skills` 会基于当前配置文件重新构建 `SkillRegistry`，并替换运行中
 `SkillMcpService` 的 registry。loader 在导入插件前会失效 import cache，并从
 `sys.modules` 中移除插件模块，因此运行中的服务可以发现新建或修改过的本地插件包。
+reload 成功后，直接 MCP skill 工具会与新的 registry 同步：已移除的 skill
+会从工具列表删除，新启用的 skill 会加入工具列表。
 
 ## 错误模型
 

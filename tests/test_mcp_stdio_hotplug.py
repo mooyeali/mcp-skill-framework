@@ -20,7 +20,16 @@ async def test_mcp_stdio_server_hot_plugs_skill_after_startup(tmp_path: Path):
         "echo",
         """
 def register(registry):
-    registry.register("echo.echo", "Echo text.", {}, lambda arguments: arguments)
+    registry.register(
+        "echo.echo",
+        "Echo text.",
+        {
+            "type": "object",
+            "properties": {"text": {"type": "string"}},
+            "required": ["text"],
+        },
+        lambda arguments: arguments,
+    )
 """,
     )
     config_file = tmp_path / "skills.yaml"
@@ -42,6 +51,12 @@ plugins:
     async with stdio_client(params) as (read_stream, write_stream):
         async with ClientSession(read_stream, write_stream) as session:
             await session.initialize()
+
+            tools = await session.list_tools()
+            assert "echo.echo" in {tool.name for tool in tools.tools}
+
+            echoed = await session.call_tool("echo.echo", {"text": "stdio"})
+            assert echoed.structuredContent == {"result": {"text": "stdio"}}
 
             missing = await session.call_tool(
                 "call_skill",
@@ -91,10 +106,10 @@ plugins:
                 ],
             }
 
-            plugged = await session.call_tool(
-                "call_skill",
-                {"name": "hotplug.ping", "arguments": {}},
-            )
+            tools = await session.list_tools()
+            assert "hotplug.ping" in {tool.name for tool in tools.tools}
+
+            plugged = await session.call_tool("hotplug.ping", {})
             assert plugged.structuredContent == {"result": {"pong": True}}
 
 

@@ -11,6 +11,11 @@ from mcp_skill_framework.server import (
 )
 
 
+@pytest.fixture
+def anyio_backend():
+    return "asyncio"
+
+
 def test_service_exposes_list_describe_and_call():
     registry = SkillRegistry()
     registry.register(
@@ -126,6 +131,20 @@ def test_create_fastmcp_server_registers_shared_tools():
     )
 
     assert mcp.name == "mcp-skill-framework"
+
+
+@pytest.mark.anyio
+async def test_create_fastmcp_server_exposes_skills_as_direct_tools():
+    mcp = create_fastmcp_server(
+        "skills.yaml",
+        host="127.0.0.1",
+        port=8765,
+        path="/mcp",
+    )
+
+    _content, structured_result = await mcp.call_tool("echo.echo", {"text": "direct"})
+
+    assert structured_result == {"result": {"text": "direct"}}
 
 
 def test_run_server_rejects_unsupported_transport():
